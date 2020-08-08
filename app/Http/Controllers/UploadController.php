@@ -12,6 +12,9 @@ use Validator;
 
 use File;
 
+use Gumlet\ImageResize;
+use wapmorgan\UnifiedArchive\UnifiedArchive;
+use AYazdanpanah\SaveUploadedFiles\Exception\Exception;
 
 class UploadController extends Controller
 {
@@ -234,6 +237,70 @@ class UploadController extends Controller
             }  
 
     }
+
+
+
+     public function merge_video_validation(Request $request){
+
+        [
+            'name' => 'upload_video', //The key name that you send to the server
+            'save_to' => $video_path, //The path you'd like to save your file
+            'save_as' => $video_name, //The name you'd like to save in your server(generate random name)
+            'validator' => [
+                'min_size' => 512, //Minimum size is 512KB
+                'max_size' => 1024 * 170, //Maximum size is 170MB
+                'allowed_extensions' => video_types() //Just video files are allowed
+            ],
+            'export' => $export_video
+        ]
+
+
+
+     } 
+
+
+
+     public function export_video($video_path,$video_name,$filename){
+
+            $video = AYazdanpanah\FFMpegStreaming\FFMpeg::create()->open($filename);
+    
+            $video_metadata = $video->getFirstStream();
+    
+            if (!$video_metadata->isVideo() && null === ($duration = $video_metadata->get('duration')) && $duration >= 60) {
+                throw new Exception("Your file is not a video or your video duration is longer than 1 minute!");
+            }
+    
+            if ($video_metadata->get('width',1) * $video_metadata->get('height', 1) < 1280 * 720) {
+                throw new Exception("Sorry, your video must be at least HD or higher resolution");
+            }
+    
+            if ($video_metadata->getDimensions()->getRatio()->getValue() == 16 / 9) {
+                throw new Exception("Sorry, the video ratio must be 16 / 9");
+            }
+    
+            $video->frame(FFMpeg\Coordinate\TimeCode::fromSeconds(intval($duration / 4)))->save("$video_path/screenshots.jpg");
+            $image = new ImageResize("$video_path/screenshots.jpg");
+            $image->resizeToWidth(240)->save("$video_path/{$video_name}_screenshots_small.jpg");
+    
+            $video->gif(FFMpeg\Coordinate\TimeCode::fromSeconds(3), new FFMpeg\Coordinate\Dimension(240, 95), 3)
+                ->save("$video_path/{$video_name}_animation.gif");
+    
+            mkdir("$video_path/dash/$video_name", 0777, true);
+            
+            dash($filename, "$video_path/dash/$video_name/output.mpd", function ($audio, $format, $percentage) {
+                echo "$percentage % transcoded\n";
+            });
+    
+            @unlink($filename);
+    
+            return $video_metadata->all();
+
+
+     }
+
+
+
+
 
 
 
