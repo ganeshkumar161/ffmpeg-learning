@@ -24,3 +24,9 @@ Route::post('text_upload', 'UploadController@video_watermark_text');
 Route::post('text_upload_animate', 'UploadController@video_watermark_text_animate');
 
 Route::post('merge_video', 'UploadController@merge_video_validation');
+
+Route::get('/initiate','PaymentController@initiate')->name('initiate.payment');
+
+Route::post('/payment','PaymentController@pay')->name('make.payment');
+
+Route::post('/payment/status', 'PaymentController@paymentCallback')->name('status');

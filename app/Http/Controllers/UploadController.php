@@ -24,6 +24,8 @@ use FFMpeg\Format\Video\DefaultVideo as BaseVideo;
 
 use AYazdanpanah\SaveUploadedFiles\Upload;
 
+
+
 class UploadController extends Controller
 {
     //
@@ -248,7 +250,7 @@ class UploadController extends Controller
 
 
 
-     public function merge_video_validation(Request $request){
+    public function merge_video_validation(Request $request){
 
         try {
 
@@ -337,6 +339,7 @@ class UploadController extends Controller
         }
 
      }
+
 
 
 
